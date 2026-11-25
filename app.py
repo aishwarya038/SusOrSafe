@@ -18,7 +18,18 @@ ABUSE = os.getenv("ABUSEIPDB_API_KEY")
 ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY")
 AI_MODEL = os.getenv("AI_MODEL") or "claude-sonnet-5-5"
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+# --- FIX: Create the directory for DB if it doesn't exist (for Render) ---
 DB_PATH = os.getenv("SUSORSAFE_DB") or "/var/data/susorsafe.db"
+db_dir = os.path.dirname(DB_PATH)
+if db_dir and not os.path.exists(db_dir):
+    try:
+        os.makedirs(db_dir, exist_ok=True)
+    except Exception:
+        # Fallback to local directory if permission denied
+        DB_PATH = os.path.join(HERE, "susorsafe.db")
+# ------------------------------------------------------------------------
+
 app = Flask(__name__, static_folder="static", static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
@@ -121,7 +132,6 @@ def analyse(b, name):
             "eicar": EICAR in b}
 
 def points(st, vt, mb, known):
-    """Every point comes from evidence: a threat-intel lookup or something measured inside the file."""
     p = []
     if known or (st and st.get("eicar")):
         p.append((100, "Built-in signatures", "EICAR antivirus test file (harmless by design, but every antivirus reports it as malware)"))
@@ -177,7 +187,6 @@ AI_SYSTEM = (
 def _clip(x, n=300): return str(x)[:n]
 
 def ai_facts(res):
-    """Only scan metadata goes to the AI. File contents are never sent."""
     return {"kind": res.get("kind"), "name": _clip(res.get("name"), 120), "type": res.get("type"), "score": res.get("score"), "verdict": res.get("verdict"),
             "threat_family": res.get("family"), "layers_checked": res.get("checked"),
             "score_breakdown": [{"points": p["pts"], "layer": p["layer"], "why": _clip(p["why"])} for p in (res.get("points") or [])[:25]],
@@ -185,7 +194,6 @@ def ai_facts(res):
             "package_counts": res.get("counts"), "notes": [_clip(n) for n in (res.get("notes") or [])[:15]]}
 
 def ai_explain(res):
-    """Ask Claude to write the plain-English summary and next steps. Returns (summary, steps, error). error is None on success."""
     if not ANTHROPIC_KEY: return None, None, "ANTHROPIC_API_KEY not set"
     try:
         r = requests.post("https://api.anthropic.com/v1/messages", timeout=40,
@@ -229,7 +237,6 @@ def file_result(name, h, st, mode, test=0):
     notes = ["Layers checked: " + (", ".join(ran) or "none")] + notes
     if not any(p["pts"] for p in pts) and checked: notes.append("No detections is not proof of safety: a brand-new malware sample may not be listed yet")
     
-    # Family name comes only from MalwareBazaar, VirusTotal/MetaDefender, or the EICAR signature. Never guessed.
     eicar = h in KNOWN_TEST or bool((st or {}).get("eicar"))
     fam = (mb or {}).get("family") or (vt or {}).get("family") or ("EICAR-Test-File" if eicar else None)
     
@@ -410,7 +417,6 @@ def stats():
     vc = Counter(r["verdict"] for r in R)
     lay = Counter(l for d in flagged for l in d.get("layers", []))
 
-    # --- NEW: Extract specific threat names for the dashboard card ---
     detected_threats = []
     for d in D:
         if d.get("family"): 
@@ -452,7 +458,7 @@ def stats():
         bands=[sum(lo <= r["score"] <= hi for r in R) for lo, hi in ((0, 20), (21, 40), (41, 60), (61, 80), (81, 100))],
         layers=[[k, round(v / len(flagged) * 100)] for k, v in lay.most_common()] if flagged else [],
         attacks=[[k, v] for k, v in attack_counts.most_common()],
-        detected_threats=detected_threats, # <--- Sending to frontend
+        detected_threats=detected_threats,
         recent=[{k: r[k] for k in ("id", "name", "kind", "verdict", "score")} for r in R[:5]])
 
 @app.post("/api/scan/<int:i>/check")
@@ -559,6 +565,4 @@ def report(i):
     return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name=f"susorsafe_report_{i}.pdf")
 
 if __name__ == "__main__":
-    # debug stays OFF (the Werkzeug debugger allows remote code execution). Listens on this computer only.
-    # To share on your network, set HOST=0.0.0.0 in .env. To debug locally, set FLASK_DEBUG=1.
     app.run(host=os.getenv("HOST", "127.0.0.1"), port=int(os.getenv("PORT", "5000")), debug=os.getenv("FLASK_DEBUG") == "1")
