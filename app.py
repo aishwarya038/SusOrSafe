@@ -20,7 +20,7 @@ AI_MODEL = os.getenv("AI_MODEL") or "claude-sonnet-5-5"
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # --- FIX: Create the directory for DB if it doesn't exist (for Render) ---
-DB_PATH = os.getenv("SUSORSAFE_DB") or "/var/data/susorsafe.db"
+DB_PATH = os.getenv("SUSORSAFE_DB", os.path.join(HERE, "susorsafe.db"))
 db_dir = os.path.dirname(DB_PATH)
 if db_dir and not os.path.exists(db_dir):
     try:
