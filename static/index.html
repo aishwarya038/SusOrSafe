@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SusOrSafe</title>
+<style>
+:root{--bg:#0a070d;--card:#140f19;--line:#3a2a42;--edge:#52345a;--pink:#f9a8d4;--pink2:#f472b6;--text:#f4eef7;--muted:#a79bb0;--red:#f87171;--amber:#fbbf24;--green:#4ade80}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text);background:var(--bg);line-height:1.5;min-height:100vh}
+a{color:var(--pink);text-decoration:none}
+.hide{display:none!important}
+svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3a2a42; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--pink2); }
+* { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+
+.scroll-y { overflow-y: auto; padding-right: 6px; }
+.scroll-y::-webkit-scrollbar { width: 6px; }
+.scroll-y::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; }
+.scroll-y::-webkit-scrollbar-thumb:hover { background: var(--pink); }
+
+.move{
+  --tx:0px;--ty:0px;--rx:0deg;--ry:0deg;--lift:0px;
+  transform:perspective(700px) translate3d(var(--tx),calc(var(--ty) + var(--lift)),0) rotateX(var(--rx)) rotateY(var(--ry));
+  transition:transform .45s cubic-bezier(.2,.9,.3,1.3),box-shadow .25s,border-color .25s,background .25s,color .25s;
+  will-change:transform;
+}
+.move.active{transition:transform .08s linear,box-shadow .25s,border-color .25s,background .25s,color .25s}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--pink2);background:transparent;color:var(--text);padding:11px 24px;border-radius:99px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{box-shadow:0 8px 24px #f472b666}
+.btn.primary{background:var(--pink);color:#1a0f1f;border-color:var(--pink)}
+.btn.danger{border-color:var(--red);color:var(--red)}.btn.danger:hover{box-shadow:0 8px 24px #f8717166}
+.btn.sm{padding:8px 18px;font-size:13px}
+.btn:active{filter:brightness(.9)}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--pink);outline-offset:3px}
+
+body.landing{background-image:radial-gradient(ellipse at 50% -10%,#2f1534 0%,transparent 60%),radial-gradient(ellipse at 85% 45%,#3a1a40 0%,transparent 55%);background-attachment:fixed}
+.lnav{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:12px clamp(14px,2vw,28px);background:#0a070dcc;backdrop-filter:blur(8px);border-bottom:1px solid #ffffff12}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;color:var(--text)}
+.logo span{color:var(--pink)}
+.logo svg{width:30px;height:30px}
+.lnav .links{display:flex;align-items:center;gap:6px}
+.lnav .links a:not(.btn){display:inline-block;color:var(--muted);font-size:15px;padding:6px 14px}
+.lnav .links a:not(.btn):hover{color:var(--text)}
+.hero{position:relative;text-align:center;padding:clamp(36px,7vh,100px) 20px clamp(36px,7vh,80px);min-height:calc(100vh - 66px);min-height:calc(100svh - 66px);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.hero>*{position:relative;z-index:1}
+.hero>.bgshield{position:absolute;z-index:0;right:-3vw;top:50%;height:112%;max-width:56vw;transform:translateY(-50%);pointer-events:none;opacity:.95}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.stars i{position:absolute;display:block;border-radius:50%;background:#fff}
+#landing{position:relative;z-index:1}
+.hero h1{text-shadow:0 0 34px #ffffff40}
+.hero h1 span{text-shadow:0 0 34px #f472b680}
+.shieldIcon{margin-top:clamp(16px,4vh,34px);width:78px;height:78px;border-radius:50%;border:2px solid var(--pink2);display:grid;place-items:center;color:var(--pink);background:#f472b61a;box-shadow:0 0 30px #f472b68a,inset 0 0 18px #f472b655}
+.shieldIcon svg{width:32px;height:32px}
+@media(max-width:1000px){.hero>.bgshield{right:50%;transform:translate(50%,-50%);max-width:none;height:100%;opacity:.22}}
+@media(max-height:700px){.shieldIcon{display:none}}
+.badge{display:inline-block;border:1px solid var(--pink2);color:var(--pink);padding:6px 16px;border-radius:99px;font-size:13px;box-shadow:0 0 14px #f472b655}
+.hero h1{font-size:clamp(34px,6.2vw,84px);line-height:1.05;margin:22px 0 16px;font-weight:800}.hero h1 span{color:var(--pink)}
+.hero p{color:var(--muted);font-size:clamp(15px,1.3vw,19px);max-width:min(660px,92vw);margin:0 auto}
+.hero .btns{margin-top:30px}
+.ticks{display:flex;gap:26px;justify-content:center;flex-wrap:wrap;margin-top:22px;color:var(--muted);font-size:14px}
+.ticks b{color:var(--pink);margin-right:5px}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+section.svcs{padding:50px 0 80px}
+section.svcs h2{text-align:center;font-size:32px;margin-bottom:8px}
+.sub{text-align:center;color:var(--muted);margin-bottom:34px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.svc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;cursor:default;position:relative;overflow:hidden}
+.svc::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),#f472b630,transparent 70%)}
+.svc:hover{border-color:var(--pink2);box-shadow:0 18px 40px #f472b645,0 0 0 1px #f472b6}
+.svc:hover::after{opacity:1}
+.svc .ico{width:46px;height:46px;border-radius:50%;background:#f9a8d422;color:var(--pink);display:grid;place-items:center;margin-bottom:14px;transition:.25s}
+.svc:hover .ico{transform:scale(1.15) rotate(-6deg);background:var(--pink);color:#1a0f1f}
+.svc h3{font-size:18px;margin-bottom:6px}.svc p{color:var(--muted);font-size:14px}
+.lfoot{text-align:center;color:var(--muted);font-size:13px;padding:26px;border-top:1px solid #ffffff12}
+
+.app{display:flex;min-height:100vh}
+.sidebar{width:270px;flex:none;position:sticky;top:0;height:100vh;border-right:1px solid #ffffff14;background:#0b080f;padding:16px;display:flex;flex-direction:column;transition:width .25s;overflow:hidden}
+.side-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:8px}
+.burger{background:none;border:0;color:var(--pink);cursor:pointer;padding:6px}
+.burger svg{width:26px;height:26px}
+.nav a{display:flex;align-items:center;gap:14px;padding:15px 16px;border-radius:99px;color:var(--muted);font-size:15px;margin-bottom:12px;white-space:nowrap}
+.nav a:hover:not(.on){color:var(--text);background:#ffffff0a}
+.nav a.on{background:var(--pink);color:#1a0f1f;font-weight:700;box-shadow:0 0 22px #f472b655}
+.spacer{flex:1}
+.sidebar.collapsed{width:78px}
+.sidebar.collapsed .lbl,.sidebar.collapsed .logo .nm{display:none}
+.sidebar.collapsed .side-top{flex-direction:column}
+main{flex:1;min-width:0;padding:22px 36px 50px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.top h1{font-size:32px;line-height:1.15}
+.top p{color:var(--muted);font-size:15px}
+.search{width:min(380px,100%);padding:12px 20px;border-radius:99px;border:1px solid var(--line);background:#120d17;color:var(--text);font-size:14px;font-family:inherit}
+.panel{background:var(--card);border:1px solid var(--edge);border-radius:24px;padding:22px;box-shadow:0 0 18px #f472b61a}
+.panel h3{font-size:16px;margin-bottom:10px}
+.muted{color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+.kpi{background:var(--card);border:1px solid var(--edge);border-radius:24px;padding:28px 10px;text-align:center}
+.kpi:hover b{color:var(--pink)}
+.kpi:hover{border-color:var(--pink2);box-shadow:0 12px 28px #f472b633}
+.kpi b{display:block;font-size:34px;line-height:1.1}.kpi span{font-size:13px;color:var(--muted)}
+.row2{display:grid;grid-template-columns:1.78fr 1.1fr 1fr;gap:16px;margin-top:16px}
+.row3{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-top:16px}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.head2{display:flex;justify-content:space-between;align-items:center}
+.head2 small{color:var(--muted);font-weight:700;font-size:12px}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+svg.lineS{overflow:visible;display:block}
+svg.lineS text{fill:var(--muted);font-size:12px;font-family:inherit}
+.donutBox{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.donutBox svg{width:150px;height:150px;flex:none}
+.dl div{font-size:13px;margin:5px 0;color:var(--muted)}.dl i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.bands{display:flex;justify-content:space-around;align-items:flex-end;margin-top:6px}
+.bands>div{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.bands .tr{width:26px;height:155px;background:#2a1d31;border-radius:99px;display:flex;align-items:flex-end;overflow:hidden}
+.bands .tr i{display:block;width:100%;min-height:18px;border-radius:99px}
+.bands b{color:var(--text);font-size:12px}
+.status:empty{display:none}
+.lay{margin:10px 0}.lay span{font-size:13px;display:flex;justify-content:space-between;margin-bottom:4px}
+.lay .tr{height:8px;background:#2a1d31;border-radius:99px;overflow:hidden}.lay .tr i{display:block;height:100%;background:var(--pink2)}
+.rec{display:flex;justify-content:space-between;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:14px;cursor:pointer}
+.rec:hover{background:#f472b611}
+.chk div{padding:8px 12px;border-radius:8px;background:#ffffff08;margin:6px 0;font-size:14px}
+.ok{color:var(--green)}.bad{color:var(--red)}
+.scanGrid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+.stack>*+*{margin-top:16px}
+.drop{border:1.5px dashed #6b4a73;border-radius:16px;padding:38px 20px;text-align:center;color:var(--text);cursor:pointer;transition:.2s;font-size:15px}
+.drop:hover,.drop.over{border-color:var(--pink2);background:#f472b611}
+.drop .plus{width:70px;height:70px;border-radius:50%;background:var(--pink);color:#1a0f1f;display:grid;place-items:center;margin:0 auto 16px;font-size:34px;line-height:1;box-shadow:0 0 22px #f472b66a}
+.drop small{display:block;color:var(--muted);margin-top:8px;font-size:12px}
+.modes label{display:flex;gap:12px;align-items:flex-start;padding:8px 0;cursor:pointer;font-size:14px}
+.modes input{accent-color:var(--pink2);margin-top:4px;width:17px;height:17px}
+.modes small{display:block;color:var(--muted);font-size:13px}
+.steps .s{display:flex;gap:14px;align-items:center;margin:14px 0}
+.steps .s i{font-style:normal;width:38px;height:38px;border-radius:50%;background:var(--pink2);color:#1a0f1f;display:grid;place-items:center;font-size:13px;font-weight:700;flex:none}
+.steps b{display:block;font-size:14px}.steps span{color:var(--muted);font-size:13px}
+.note b{color:var(--pink);font-size:14px}.note p{color:var(--muted);font-size:14px;margin-top:4px}
+input.field{width:100%;padding:14px 18px;border-radius:99px;border:1px solid var(--line);background:#0d0911;color:var(--text);font-size:15px;margin-bottom:14px;font-family:inherit}
+.status{color:var(--muted);font-size:14px;margin-top:12px;min-height:20px}
+.result{margin-top:16px}
+.result:empty{display:none}
+.score{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.num{font-size:54px;font-weight:800;line-height:1}.Safe{color:var(--green)}.Suspicious{color:var(--amber)}.Malicious{color:var(--red)}
+.bar{height:10px;background:#ffffff14;border-radius:99px;overflow:hidden;margin:12px 0 18px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--amber),var(--red))}
+.pt{padding:8px 12px;border-left:3px solid var(--pink2);background:#ffffff08;margin:6px 0;border-radius:6px;font-size:14px}
+h4{margin:16px 0 6px;color:var(--pink);font-size:15px}
+ul.n{padding-left:20px;color:var(--muted);font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}
+tr.click:hover{background:#f472b611;cursor:pointer}
+
+.task-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; cursor: pointer; }
+.task-item input[type="checkbox"] { margin-top: 4px; accent-color: var(--pink); cursor: pointer; width: 16px; height: 16px; }
+.task-item span { color: var(--muted); font-size: 14px; line-height: 1.4; transition: 0.2s; }
+.task-item input:checked + span { text-decoration: line-through; opacity: 0.6; }
+
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.row2,.row3,.scanGrid{grid-template-columns:1fr}}
+@media(max-width:1000px){.grid3{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.grid3{grid-template-columns:1fr}}
+@media(max-width:850px){main{padding:18px}.sidebar{width:78px}.sidebar .lbl,.sidebar .logo .nm{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.lnav .links a.opt{display:none}}
+@media(prefers-reduced-motion:reduce){.move{transform:none!important;transition:none!important}}
+
+.app{
+  --muted:#cdbfd8;
+  background-color:var(--bg);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84'%3E%3Cg fill='none' stroke='%23f9a8d4' stroke-width='1' opacity='.28'%3E%3Cpath transform='translate(18 20)' d='M0-9L8-6V1C8 6 3 9 0 11C-3 9-8 6-8 1V-6Z'/%3E%3Cpath transform='translate(62 52) scale(.75)' d='M0-9L8-6V1C8 6 3 9 0 11C-3 9-8 6-8 1V-6Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:84px 84px;
+  background-attachment:fixed;
+}
+.app .sidebar{
+  top:12px;height:calc(100vh - 24px);margin:12px 0 12px 12px;
+  border:1px solid #f9a8d459;border-radius:22px;
+  background:#ffffff0f;
+  -webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);
+  box-shadow:inset 0 1px 0 #ffffff40,0 8px 32px #0006;
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.app .sidebar{background:#150f1be6}}
+.app .nav a{color:#f6ecf9}
+.app .nav a:hover:not(.on){background:#ffffff1a}
+.app .nav a.on{color:#1a0f1f}
+.app .panel,.app .kpi{background:#ffffff0d;border-color:#f9a8d44d}
+.app .search{background:#ffffff14;border:1.5px solid var(--pink2);box-shadow:0 0 14px #f472b633}
+.app .search::placeholder{color:#d9cde2;opacity:1}
+.app .search:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 3px #f9a8d433,0 0 18px #f472b655}
+.app .top h1{color:#fff}
+@media(max-width:850px){.app .sidebar{margin:8px 0 8px 8px;top:8px;height:calc(100vh - 16px)}}
+
+.modal-overlay {
+  position: fixed; inset: 0; background: #000000cc; backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+}
+.modal-content {
+  background: var(--card);
+  border: 1px solid var(--pink2);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 85vh;
+  position: relative;
+  box-shadow: 0 10px 40px #f472b644;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-content > div {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-right: 2px;
+}
+.modal-content > div::-webkit-scrollbar { width: 6px; }
+.modal-content > div::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; }
+.modal-content > div::-webkit-scrollbar-thumb:hover { background: var(--pink); }
+
+.modal-close {
+  position: absolute; top: 20px; right: 20px; background: transparent; border: 1px solid var(--line);
+  color: var(--text); border-radius: 50%; width: 36px; height: 36px; display: flex;
+  align-items: center; justify-content: center; cursor: pointer; font-size: 20px; z-index: 10;
+}
+.modal-close:hover { border-color: var(--pink); color: var(--pink); }
+.icon-btn { background: transparent; border: 0; color: var(--pink); cursor: pointer; padding: 6px; border-radius: 50%; display: inline-flex; transition: .2s; }
+.icon-btn:hover { background: #f472b622; transform: scale(1.1); }
+
+.confirm-overlay { z-index: 200; animation: cfade .15s ease-out; }
+.confirm-card {
+  background: var(--card); border: 1px solid var(--pink2); border-radius: 24px;
+  width: 100%; max-width: 420px; padding: 32px 28px 26px; text-align: center; position: relative;
+  box-shadow: 0 10px 40px #f472b655; animation: cpop .18s ease-out;
+}
+.confirm-icon {
+  width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700;
+  color: var(--red); border: 1px solid var(--red); background: #f8717118;
+}
+.confirm-card h3 { margin: 0 0 8px; font-size: 20px; color: var(--text); }
+.confirm-card p { margin: 0 0 24px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.confirm-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.confirm-actions .btn { min-width: 120px; }
+.confirm-actions .btn.danger { background: var(--red); color: #1a0f1f; }
+@keyframes cfade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes cpop { from { opacity: 0; transform: scale(.94) } to { opacity: 1; transform: scale(1) } }
+</style>
+</head>
+<body class="landing">
+
+<div class="stars" id="stars"></div>
+<div id="landing">
+  <div class="lnav">
+    <a class="logo" href="#home">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 3.5A12.5 12.5 0 0 0 16 28.5" stroke="#f9a8d4" stroke-width="1.9" stroke-linecap="round" stroke-dasharray="2.4 3.3"/><path d="M10.4 10.2v6.6" stroke="#f9a8d4" stroke-width="2" stroke-linecap="round"/><circle cx="10.4" cy="21.4" r="1.3" fill="#f9a8d4"/><path d="M17 3.5A12.5 12.5 0 0 1 17 28.5z" fill="#f9a8d4"/><path d="M18.4 16.6l3.2 3 5-6.2" stroke="#0a070d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="nm">Sus<span>OrSafe</span></span>
+    </a>
+    <div class="links">
+      <a class="move" data-pull="0.35" href="#home" data-scroll="services">Services</a>
+      <a class="btn primary sm move" href="#dashboard">Get Started</a>
+    </div>
+  </div>
+
+  <div class="hero">
+    <svg class="bgshield" viewBox="0 0 520 620" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="shL" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f9a8d4" stop-opacity=".55"/><stop offset="1" stop-color="#7c3a78" stop-opacity=".25"/></linearGradient>
+        <linearGradient id="shR" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b05a9c" stop-opacity=".28"/><stop offset="1" stop-color="#2a1230" stop-opacity=".12"/></linearGradient>
+        <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <g stroke="#f472b6" stroke-opacity=".28" stroke-width="1">
+        <circle cx="300" cy="310" r="120"/><circle cx="300" cy="310" r="170"/><circle cx="300" cy="310" r="220"/><circle cx="300" cy="310" r="270" stroke-opacity=".15"/>
+        <path d="M300 20v580M10 310h580M95 105l410 410M505 105L95 515" stroke-opacity=".16"/>
+      </g>
+      <g stroke="#f9a8d4" stroke-opacity=".5" stroke-width="2" stroke-dasharray="2 9" stroke-linecap="round"><circle cx="300" cy="310" r="195"/><circle cx="300" cy="310" r="245"/></g>
+      <g filter="url(#glow)">
+        <path d="M300 70l140 48v120c0 105-58 172-140 214C218 410 160 343 160 238V118z" fill="url(#shR)"/>
+        <path d="M300 70l-140 48v120c0 105 58 172 140 214z" fill="url(#shL)"/>
+        <path d="M300 70l140 48v120c0 105-58 172-140 214C218 410 160 343 160 238V118z" stroke="#f9a8d4" stroke-opacity=".75" stroke-width="2.5"/>
+        <path d="M300 70v382" stroke="#f9a8d4" stroke-opacity=".6" stroke-width="2"/>
+      </g>
+      <path d="M300 110l104 36v92c0 78-43 130-104 162C239 368 196 316 196 238v-92z" stroke="#f9a8d4" stroke-opacity=".3" stroke-width="1.2"/>
+    </svg>
+    <span class="badge">Hash intel, static analysis and AI in one scan</span>
+    <h1>Is it sus, <span>or safe?</span></h1>
+    <p>Drop a file or paste a hash. SusOrSafe checks it against live threat databases, inspects it in memory, scores it, and explains every point of the verdict in plain English.</p>
+    <div class="btns" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap"><a class="btn primary move" href="#dashboard"><svg class="ic" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Get Started Free</a><a class="btn move" href="#home" data-scroll="services">Explore Services</a></div>
+    <div class="ticks"><span><b>✓</b>Files are never executed</span><span><b>✓</b>Hash-only privacy mode</span><span><b>✓</b>No sign-up</span></div>
+    <div class="shieldIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 2.8v5.7c0 4.6-3 7.9-7.5 9.5-4.5-1.6-7.5-4.9-7.5-9.5V5.8z"/><path d="M12 3v17" /></svg></div>
+  </div>
+
+  <div class="wrap">
+    <section class="svcs" id="services">
+      <h2>Our Services</h2>
+      <p class="sub">Six tools that cover the first minutes of a malware investigation</p>
+      <div class="grid3">
+        <div class="svc move" data-tilt><div class="ico"><svg class="ic" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14M10 4L8 20M16 4l-2 16"/></svg></div><h3>Live hash reputation</h3><p>The SHA-256 is computed in your browser, then checked on VirusTotal and MalwareBazaar.</p></div>
+        <div class="svc move" data-tilt><div class="ico"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg></div><h3>In-memory static analysis</h3><p>Entropy, file type and suspicious API, macro and script strings are read from memory. Nothing is run or saved.</p></div>
+        <div class="svc move" data-tilt><div class="ico"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></div><h3>Explainable score</h3><p>A 0 to 100 risk score where every point is listed with its reason.</p></div>
+        <div class="svc move" data-tilt><div class="ico"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/></svg></div><h3>AI analysis</h3><p>An AI writes the summary and next steps. It explains the verdict and never decides it.</p></div>
+        <div class="svc move" data-tilt><div class="ico"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg></div><h3>Package check</h3><p>Find malicious or vulnerable dependencies in requirements.txt or package.json.</p></div>
+        <div class="svc move" data-tilt><div class="ico"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10l3 2-3 2M12 15h5"/></svg></div><h3>Log check</h3><p>Upload a server or auth log to detect SQL injection, XSS, brute force and scanner tools. Live IP check included.</p></div>
+      </div>
+    </section>
+  </div>
+  <div class="lfoot">© SusOrSafe. Built in 2026.</div>
+</div>
+
+<div class="app hide" id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-top">
+      <a class="logo" href="#home">
+        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 3.5A12.5 12.5 0 0 0 16 28.5" stroke="#f9a8d4" stroke-width="1.9" stroke-linecap="round" stroke-dasharray="2.4 3.3"/><path d="M10.4 10.2v6.6" stroke="#f9a8d4" stroke-width="2" stroke-linecap="round"/><circle cx="10.4" cy="21.4" r="1.3" fill="#f9a8d4"/><path d="M17 3.5A12.5 12.5 0 0 1 17 28.5z" fill="#f9a8d4"/><path d="M18.4 16.6l3.2 3 5-6.2" stroke="#0a070d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nm">Sus<span>OrSafe</span></span>
+      </a>
+      <button class="burger" id="burger" aria-label="Toggle sidebar"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+    <nav class="nav" id="nav">
+      <a class="move" data-pull="0.15" href="#dashboard" data-r="dashboard"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg><span class="lbl">Dashboard</span></a>
+      <a class="move" data-pull="0.15" href="#scan" data-r="scan"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg><span class="lbl">Scan a file</span></a>
+      <a class="move" data-pull="0.15" href="#hash" data-r="hash"><svg class="ic" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14M10 4L8 20M16 4l-2 16"/></svg><span class="lbl">Hash lookup</span></a>
+      <a class="move" data-pull="0.15" href="#package" data-r="package"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span class="lbl">Package check</span></a>
+      <a class="move" data-pull="0.15" href="#log" data-r="log"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10l3 2-3 2M12 15h5"/></svg><span class="lbl">Log check</span></a>
+      <a class="move" data-pull="0.15" href="#history" data-r="history"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4l3 2"/></svg><span class="lbl">Scan history</span></a>
+      <a class="move" data-pull="0.15" href="#audit" data-r="audit"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg><span class="lbl">Audit trail</span></a>
+    </nav>
+    <div class="spacer"></div>
+    <nav class="nav"><a class="move" data-pull="0.15" href="#home"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/></svg><span class="lbl">Back to home</span></a></nav>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div><h1 id="pgTitle">Malware Detection Overview</h1><p id="pgSub">Everything you scanned, at a glance</p></div>
+      <input class="search" id="search" type="search" placeholder="Search hash or file name..." autocomplete="off" style="display:none;">
+    </div>
+
+    <section class="view" id="v-dashboard">
+      <div class="status" id="st-dashboard"></div>
+      
+      <div class="actions" style="margin-bottom: 16px;">
+        <button class="btn danger sm move" data-clear>Clear history</button>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+      
+      <div class="row2">
+        <div class="panel">
+          <div class="head2"><h3>Detections over time</h3><small>7 days</small></div>
+          <div id="lineChart"></div>
+          <div class="legend"><span><i style="background:#f4eef7"></i>Scans (light)</span><span><i style="background:var(--pink)"></i>Threats (pink)</span></div>
+        </div>
+        
+        <div class="panel">
+          <h3>Verdict split</h3>
+          <div class="donutBox" id="donut"></div>
+        </div>
+        
+        <div class="panel">
+          <h3>Attack Category Breakdown</h3>
+          <div class="donutBox" id="attackDonut"></div>
+        </div>
+      </div>
+      
+      <div class="row3">
+        <div class="panel"><h3>Risk score bands</h3><div class="bands" id="bands"></div></div>
+        <div class="panel">
+          <h3>Recent scans</h3>
+          <div id="recent" class="scroll-y" style="max-height: 200px;"></div>
+        </div>
+      </div>
+      
+      <div class="row3">
+        <div class="panel">
+          <h3>Which layer caught it?</h3>
+          <div id="layers" class="scroll-y" style="max-height: 200px;"></div>
+        </div>
+        <div class="panel">
+          <h3>Detected Malware Families</h3>
+          <div id="detectedThreats" class="scroll-y" style="max-height: 200px;"></div>
+        </div>
+      </div>
+
+      <div class="result panel" id="res-dashboard" style="margin-top:16px"></div>
+    </section>
+
+    <section class="view hide" id="v-scan">
+      <div class="scanGrid">
+        <div class="stack">
+          <div class="panel">
+            <div class="drop" id="dropFile"><div class="plus">+</div>Drag and drop a file here, or click to browse<small id="fileLabel">Executables, PDF, Office, scripts | max 20 MB</small></div>
+            <input type="file" id="fileIn" class="hide">
+          </div>
+          <div class="panel modes">
+            <h3>Scan mode</h3>
+            <label><input type="radio" name="mode" value="hash" checked><span><b>Hash-only (private, default)</b><small>File is hashed in your browser. Only the hash is checked.</small></span></label>
+            <label><input type="radio" name="mode" value="deep"><span><b>Deep scan (opt-in)</b><small>File is analysed in memory, never run, never saved.</small></span></label>
+          </div>
+          <div class="actions" style="margin-bottom:0">
+            <button class="btn primary move" id="scanBtn">SCAN FILE</button>
+            <button class="btn move" id="clearScan">Clear</button>
+          </div>
+          <div class="status" id="st-scan"></div>
+          <div class="result panel" id="res-scan"></div>
+          <div class="panel note"><b>Privacy notice</b><p>Your file is never executed. In hash-only mode it never leaves your browser. Do not upload private documents in deep scan mode.</p></div>
+        </div>
+        <div class="panel steps">
+          <h3>How the scan works</h3>
+          <div class="s"><i>1</i><div><b>Hash reputation</b><span>VirusTotal and MalwareBazaar</span></div></div>
+          <div class="s"><i>2</i><div><b>Static analysis</b><span>Entropy, file type, APIs, macros</span></div></div>
+          <div class="s"><i>3</i><div><b>Explainable score</b><span>0 to 100, every point explained</span></div></div>
+          <div class="s"><i>4</i><div><b>AI analysis</b><span>Plain-English summary, next steps</span></div></div>
+          <div class="s"><i>5</i><div><b>Report saved</b><span>Download as PDF, export as CSV</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hide" id="v-hash">
+      <div class="panel" style="max-width:800px">
+        <input class="field" id="hashIn" type="text" placeholder="e.g. 9f2c4a...">
+        <button class="btn primary move" id="hashBtn">Check hash</button>
+        <div class="status" id="st-hash"></div>
+        <div class="result" id="res-hash"></div>
+      </div>
+    </section>
+
+    <section class="view hide" id="v-package">
+      <div class="panel">
+        <div class="drop" id="dropPkg"><div class="plus">+</div>Upload requirements.txt (name==version) or package.json<small id="pkgLabel"></small></div>
+        <input type="file" id="pkgIn" class="hide">
+        <div class="status" id="st-package"></div>
+        <div class="result" id="res-package"></div>
+      </div>
+    </section>
+
+    <section class="view hide" id="v-log">
+      <div class="panel">
+        <div class="drop" id="dropLog"><div class="plus">+</div>Upload a server or auth log (.log or .txt) to detect attacks<small id="logLabel">SQL injection, XSS, brute force, scanner tools | live IP check | max 5 MB</small></div>
+        <input type="file" id="logIn" class="hide" accept=".log,.txt,.out,text/plain">
+        <div class="status" id="st-log"></div>
+        <div class="result" id="res-log"></div>
+      </div>
+    </section>
+
+    <section class="view hide" id="v-history">
+      <div class="panel">
+        <div class="actions">
+          <a class="btn primary sm move" href="/api/history.csv">Export CSV</a>
+          <button class="btn danger sm move" id="clearAllBtn2" data-clear>Clear all</button>
+        </div>
+        <div class="result" id="res-history" style="margin:0 0 16px"></div>
+        <div class="scroll-y" style="max-height: 500px;">
+          <table>
+            <thead><tr><th>ID</th><th>Time</th><th>Name</th><th>Type</th><th>Verdict</th><th>Score</th><th>Action</th></tr></thead>
+            <tbody id="hist"></tbody>
+          </table>
+        </div>
+        <p class="muted" id="histEmpty" style="margin-top:10px">No scans yet.</p>
+      </div>
+    </section>
+
+    <section class="view hide" id="v-audit">
+      <div class="panel">
+        <p class="muted" style="font-size:14px;margin:0 0 14px">Every scan, delete and clear is recorded here with its real time. This log is append-only: it cannot be erased from the website, only by the administrator.</p>
+        <div class="scroll-y" style="max-height: 500px;">
+          <table><thead><tr><th>Time</th><th>Action</th><th>Details</th><th>By</th></tr></thead><tbody id="auditRows"></tbody></table>
+        </div>
+        <p class="muted" id="auditEmpty" style="margin-top:10px">No activity yet.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="detailModal" class="modal-overlay hide">
+  <div class="modal-content">
+    <button class="modal-close" id="closeModalBtn">&times;</button>
+    <div id="modalBody" style="padding: 30px;"></div>
+  </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay confirm-overlay hide">
+  <div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMsg">
+    <button class="modal-close" id="confirmX" aria-label="Close">&times;</button>
+    <div class="confirm-icon">!</div>
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="btn" id="confirmCancel">Cancel</button>
+      <button class="btn danger" id="confirmOk">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let viewedId = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const setStatus = (v, m) => { const e = $("st-" + v); if(e) e.textContent = m || ""; };
+
+(function(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if(!matchMedia("(hover: hover)").matches) return;
+  let cur = null;
+  function reset(el){
+    el.classList.remove("active");
+    ["--tx","--ty","--lift"].forEach(k => el.style.setProperty(k,"0px"));
+    ["--rx","--ry"].forEach(k => el.style.setProperty(k,"0deg"));
+  }
+  document.addEventListener("mousemove", e => {
+    const el = e.target.closest && e.target.closest(".move");
+    if(cur && cur !== el) reset(cur);
+    cur = el;
+    if(!el) return;
+    const r = el.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width/2), dy = e.clientY - (r.top + r.height/2);
+    el.classList.add("active");
+    if(el.hasAttribute("data-tilt")){
+      el.style.setProperty("--tx", (dx*0.06).toFixed(1)+"px");
+      el.style.setProperty("--ty", (dy*0.06).toFixed(1)+"px");
+      el.style.setProperty("--ry", (dx/r.width*14).toFixed(2)+"deg");
+      el.style.setProperty("--rx", (-dy/r.height*14).toFixed(2)+"deg");
+      el.style.setProperty("--lift","-8px");
+      el.style.setProperty("--mx", (e.clientX-r.left)+"px"); el.style.setProperty("--my", (e.clientY-r.top)+"px");
+    } else {
+      const k = parseFloat(el.dataset.pull) || 0.28;
+      el.style.setProperty("--tx", (dx*k).toFixed(1)+"px");
+      el.style.setProperty("--ty", (dy*k*1.3).toFixed(1)+"px");
+      el.style.setProperty("--lift","-2px");
+    }
+  });
+  document.addEventListener("mouseleave", () => { if(cur){ reset(cur); cur = null; } });
+})();
+
+(function(){
+  const box = $("stars"); let h = "";
+  for(let i = 0; i < 150; i++){
+    const z = Math.random() < .12 ? 2.4 : Math.random() < .4 ? 1.6 : 1;
+    h += `<i style="left:${(Math.random()*100).toFixed(2)}%;top:${(Math.random()*100).toFixed(2)}%;width:${z}px;height:${z}px;opacity:${(.25+Math.random()*.7).toFixed(2)}"></i>`;
+  }
+  box.innerHTML = h;
+})();
+
+const VIEWS = ["dashboard","scan","hash","package","log","history","audit"];
+const TITLES = {
+  dashboard:["Malware Detection Overview","Everything you scanned, at a glance"],
+  scan:["Scan a file","Choose how you want to scan"],
+  hash:["Hash lookup","Paste an MD5, SHA-1 or SHA-256"],
+  package:["Package check","For developers: scan requirements.txt or package.json"],
+  log:["Log check","Find attacks and brute-force attempts in a log file"],
+  history:["Scan history","Every scan is saved"],
+  audit:["Audit trail","A permanent record of every action"]
+};
+function route(){
+  const r = location.hash.slice(1);
+  const inApp = VIEWS.includes(r);
+  $("landing").classList.toggle("hide", inApp);
+  $("app").classList.toggle("hide", !inApp);
+  document.body.classList.toggle("landing", !inApp);
+  $("stars").classList.toggle("hide", inApp);
+  if(!inApp){ window.scrollTo(0,0); return; }
+  VIEWS.forEach(v => $("v-"+v).classList.toggle("hide", v !== r));
+  document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.r === r));
+  $("pgTitle").textContent = TITLES[r][0]; $("pgSub").textContent = TITLES[r][1];
+  window.scrollTo(0,0);
+  
+  const mainSearch = $("search");
+  if (r === "history") {
+    mainSearch.style.display = ""; 
+  } else {
+    mainSearch.style.display = "none";
+  }
+
+  refresh();
+}
+window.addEventListener("hashchange", route);
+document.querySelectorAll("[data-scroll]").forEach(a => a.addEventListener("click", e => {
+  e.preventDefault();
+  if(location.hash && location.hash !== "#home") location.hash = "#home";
+  const t = $(a.dataset.scroll); if(t) t.scrollIntoView({behavior:"smooth"});
+}));
+$("burger").onclick = () => $("sidebar").classList.toggle("collapsed");
+
+async function post(url, body, json){
+  const r = await fetch(url, json ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {method:"POST", body});
+  const d = await r.json().catch(() => ({}));
+  if(!r.ok) throw new Error(d.error || ("Request failed (" + r.status + ")"));
+  return d;
+}
+async function sha256(file){
+  const h = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2,"0")).join("");
+}
+function showResult(d, view){
+  viewedId = d.id;
+  const box = $("res-" + view);
+  const pts = (d.points||[]).map(p => `<div class="pt"><b>+${p.pts}</b> ${esc(p.layer)}: ${esc(p.why)}</div>`).join("");
+  const fnd = (d.findings||[]).map(f => `<div class="pt"><b>${esc(f.severity)}</b> ${esc(f.package)} ${esc(f.version)}: ${esc(f.issue)}</div>`).join("");
+  const c = d.counts ? `<p class="muted" style="font-size:14px">Checked ${d.counts.total} packages: ${d.counts.malicious} malicious, ${d.counts.vulnerable} vulnerable, ${d.counts.clean} clean.</p>` : "";
+  
+  const checks = (d.next||[]).map((n, i) => `
+    <label class="task-item">
+      <input type="checkbox" onchange="toggleTask(${d.id}, ${i}, this)" ${d.checked_items && d.checked_items[i] ? 'checked' : ''}>
+      <span>${esc(n)}</span>
+    </label>
+  `).join("");
+
+  box.innerHTML = `
+    <div class="score"><div class="num ${esc(d.verdict)}">${esc(d.score)}</div>
+      <div><div class="${esc(d.verdict)}" style="font-size:22px;font-weight:700">${esc(d.verdict)}</div>
+      <div class="muted" style="font-size:14px">${esc(d.name)} | ${esc(d.type)}${d.sha256 ? " | " + esc(d.sha256.slice(0,16)) + "..." : ""}</div></div></div>
+    <div class="bar"><i style="width:${Number(d.score)||0}%"></i></div>
+    ${c}
+    <h4>Why this score</h4>${pts || fnd || "<div class='pt'>No layer found anything bad.</div>"}${pts && fnd ? fnd : ""}
+    ${(d.notes||[]).length ? "<h4>Notes</h4><ul class='n'>" + d.notes.map(n => "<li>"+esc(n)+"</li>").join("") + "</ul>" : ""}
+    <h4>AI summary</h4><p class="muted" style="font-size:14px">${esc(d.ai)}</p>
+    <h4>What to do next</h4>
+    <div class="checklist">${checks}</div>
+    <div style="margin-top:16px"><a class="btn sm move" href="/api/report/${Number(d.id)}.pdf">Download PDF report</a> <button class="btn danger sm move" data-del="${Number(d.id)}">Delete scan</button></div>`;
+  box.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+async function toggleTask(id, idx, cb) {
+  try {
+    await fetch(`/api/scan/${id}/check`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({index: idx, checked: cb.checked})
+    });
+  } catch(e) { console.error("Failed to save checkbox", e); }
+}
+
+async function openModal(id) {
+  $("modalBody").innerHTML = "<p>Loading...</p>";
+  $("detailModal").classList.remove("hide");
+  try {
+    const d = await (await fetch("/api/scan/" + id)).json();
+    const pts = (d.points||[]).map(p => `<div class="pt"><b>+${p.pts}</b> ${esc(p.layer)}: ${esc(p.why)}</div>`).join("");
+    const fnd = (d.findings||[]).map(f => `<div class="pt"><b>${esc(f.severity)}</b> ${esc(f.package)} ${esc(f.version)}: ${esc(f.issue)}</div>`).join("");
+    const c = d.counts ? `<p class="muted" style="font-size:14px">Checked ${d.counts.total} packages: ${d.counts.malicious} malicious, ${d.counts.vulnerable} vulnerable, ${d.counts.clean} clean.</p>` : "";
+    
+    const checks = (d.next||[]).map((n, i) => `
+      <label class="task-item">
+        <input type="checkbox" onchange="toggleTask(${d.id}, ${i}, this)" ${d.checked_items && d.checked_items[i] ? 'checked' : ''}>
+        <span>${esc(n)}</span>
+      </label>
+    `).join("");
+
+    $("modalBody").innerHTML = `
+      <div class="score"><div class="num ${esc(d.verdict)}">${esc(d.score)}</div>
+        <div><div class="${esc(d.verdict)}" style="font-size:22px;font-weight:700">${esc(d.verdict)}</div>
+        <div class="muted" style="font-size:14px">${esc(d.name)} | ${esc(d.type)}${d.sha256 ? " | " + esc(d.sha256.slice(0,16)) + "..." : ""}</div></div></div>
+      <div class="bar"><i style="width:${Number(d.score)||0}%"></i></div>
+      ${c}
+      <h4>Why this score</h4>${pts || fnd || "<div class='pt'>No layer found anything bad.</div>"}${pts && fnd ? fnd : ""}
+      ${(d.notes||[]).length ? "<h4>Notes</h4><ul class='n'>" + d.notes.map(n => "<li>"+esc(n)+"</li>").join("") + "</ul>" : ""}
+      <h4>AI summary</h4><p class="muted" style="font-size:14px">${esc(d.ai)}</p>
+      <h4>What to do next</h4>
+      <div class="checklist">${checks}</div>
+      <div style="margin-top:16px"><a class="btn sm move" href="/api/report/${Number(d.id)}.pdf">Download PDF report</a> <button class="btn danger sm move" data-del="${Number(d.id)}">Delete scan</button></div>`;
+  } catch(e) {
+    $("modalBody").innerHTML = "<p>Error loading scan details.</p>";
+  }
+}
+$("closeModalBtn").onclick = () => $("detailModal").classList.add("hide");
+
+let picked = null;
+function wireDrop(zone, input, onPick){
+  zone.onclick = () => input.click();
+  zone.ondragover = e => { e.preventDefault(); zone.classList.add("over"); };
+  zone.ondragleave = () => zone.classList.remove("over");
+  zone.ondrop = e => { e.preventDefault(); zone.classList.remove("over"); if(e.dataTransfer.files[0]) onPick(e.dataTransfer.files[0]); };
+  input.onchange = () => { if(input.files[0]) onPick(input.files[0]); };
+}
+const FILE_HINT = "Executables, PDF, Office, scripts | max 20 MB";
+const LOG_HINT = "SQL injection, XSS, brute force, scanner tools | live IP check | max 5 MB";
+wireDrop($("dropFile"), $("fileIn"), f => { picked = f; $("fileLabel").textContent = "Selected: " + f.name; setStatus("scan",""); });
+$("scanBtn").onclick = async () => {
+  if(!picked){ setStatus("scan","Choose a file first."); return; }
+  const mode = document.querySelector("input[name=mode]:checked").value;
+  try{
+    setStatus("scan", mode === "hash" ? "Hashing in your browser..." : "Scanning in memory...");
+    let d;
+    if(mode === "hash"){
+      d = await post("/api/hash", {sha256: await sha256(picked), name: picked.name}, true);
+    } else {
+      if(picked.size > 20*1024*1024) throw new Error("File is larger than 20 MB");
+      const fd = new FormData(); fd.append("file", picked, picked.name);
+      d = await post("/api/scan", fd);
+    }
+    showResult(d, "scan"); setStatus("scan",""); refresh();
+  }catch(e){ setStatus("scan","Error: " + e.message); }
+};
+$("clearScan").onclick = () => {
+  picked = null; $("fileIn").value = ""; $("fileLabel").textContent = FILE_HINT;
+  $("res-scan").innerHTML = ""; setStatus("scan","");
+};
+
+async function checkHash(){
+  try{
+    setStatus("hash","Checking hash...");
+    const d = await post("/api/hash", {sha256: $("hashIn").value}, true);
+    showResult(d, "hash"); setStatus("hash",""); refresh();
+  }catch(e){ setStatus("hash","Error: " + e.message); }
+}
+$("hashBtn").onclick = checkHash;
+$("hashIn").addEventListener("keydown", e => { if(e.key === "Enter") checkHash(); });
+
+wireDrop($("dropPkg"), $("pkgIn"), async f => {
+  $("pkgLabel").textContent = "Selected: " + f.name;
+  try{
+    setStatus("package","Checking packages...");
+    const fd = new FormData(); fd.append("file", f, f.name);
+    const d = await post("/api/package", fd); showResult(d, "package"); setStatus("package",""); refresh();
+  }catch(e){ setStatus("package","Error: " + e.message); }
+});
+
+wireDrop($("dropLog"), $("logIn"), async f => {
+  $("logLabel").textContent = "Selected: " + f.name;
+  try{
+    if(f.size > 5*1024*1024) throw new Error("Log file is larger than 5 MB");
+    setStatus("log","Analysing log and checking IPs live (can take a few seconds)...");
+    const fd = new FormData(); fd.append("file", f, f.name);
+    const d = await post("/api/log", fd); showResult(d, "log"); setStatus("log",""); refresh();
+  }catch(e){ setStatus("log","Error: " + e.message); }
+  $("logIn").value = "";
+});
+
+let HIST = [], Q = "";
+const dayName = iso => new Date(iso + "T00:00:00").toLocaleDateString("en-US", {weekday:"short"});
+
+// UPDATED: Exactly as requested, clean lines, no gradient shading.
+function lineChart(days, scans, threats){
+  const W = 700, H = 270, L = 44, R = 44, T = 20, B = 44;
+  const mx = Math.max(1, ...scans, ...threats), top = mx <= 4 ? 4 : Math.ceil(mx/4)*4;
+  const x = i => L + i*(W-L-R)/(days.length-1), y = v => T + (H-T-B) * (1 - v/top);
+  let g = "";
+  for(let i = 1; i <= 3; i++){ const yy = y(top*i/4); g += `<line x1="${L-14}" x2="${W-R+14}" y1="${yy}" y2="${yy}" stroke="#ffffff12"/>`; }
+  const labels = days.map((d,i) => `<text x="${x(i)}" y="${H-12}" text-anchor="middle" style="font-size:15px">${dayName(d)}</text>`).join("");
+  const pl = arr => arr.map((v,i) => `${x(i)},${y(v)}`).join(" ");
+  const dots = (arr, c) => arr.map((v,i) => `<circle cx="${x(i)}" cy="${y(v)}" r="5" fill="${c}"/>`).join("");
+  
+  return `<svg class="lineS" viewBox="0 0 ${W} ${H}" width="100%">
+    ${g}${labels}
+    <polyline points="${pl(scans)}" fill="none" stroke="#f4eef7" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots(scans,"#f4eef7")}
+    <polyline points="${pl(threats)}" fill="none" stroke="#f9a8d4" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots(threats,"#f9a8d4")}
+  </svg>`;
+}
+
+function donut(split, flagged, centerText, label) {
+  const cols = ["#f472b6", "#c4b5fd", "#fbbf24", "#f4eef7", "#4ade80"], r = 54, C = 2 * Math.PI * r;
+  const total = split.reduce((a, s) => a + s[1], 0);
+  let off = 0, segs = "";
+  if (total) split.forEach((s, i) => {
+    const len = (s[1] / total) * C;
+    segs += `<circle cx="75" cy="75" r="${r}" fill="none" stroke="${cols[i % cols.length]}" stroke-width="20" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-off}" transform="rotate(-90 75 75)"/>`;
+    off += len;
+  });
+  const legend = total ? split.map((s, i) => `<div><i style="background:${cols[i % cols.length]}"></i>${esc(s[0])} (${s[1]})</div>`).join("") : `<div class="muted" style="text-align:center;font-size:13px">No attacks detected yet</div>`;
+  
+  return `<svg viewBox="0 0 150 150">
+    <circle cx="75" cy="75" r="${r}" fill="none" stroke="#2a1d31" stroke-width="20"/>
+    ${segs}
+    <text x="75" y="${label ? '70' : '84'}" text-anchor="middle" style="fill:#f4eef7;font-size:26px;font-weight:800">${centerText}</text>
+    ${label ? `<text x="75" y="88" text-anchor="middle" style="fill:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">${label}</text>` : ''}
+  </svg><div class="dl">${legend}</div>`;
+}
+
+async function refresh(){
+  try{
+    const s = await (await fetch("/api/stats")).json();
+    const k = s.kpi;
+    $("kpis").innerHTML = `
+      <div class="kpi move"><b>${k.scanned}</b><span>Files scanned</span></div>
+      <div class="kpi move"><b>${k.malware}</b><span>Malicious</span></div>
+      <div class="kpi move"><b>${k.suspicious}</b><span>Suspicious</span></div>
+      <div class="kpi move"><b>${k.clean}</b><span>Safe</span></div>
+      <div class="kpi move"><b>${k.packages}</b><span>Packages checked</span></div>
+      <div class="kpi move"><b>${k.logs}</b><span>Logs analysed</span></div>`;
+      
+    $("lineChart").innerHTML = lineChart(s.days, s.scans, s.threats);
+    
+    $("donut").innerHTML = donut(s.split, s.total, s.total, "Total");
+    $("attackDonut").innerHTML = donut(s.attacks && s.attacks.length ? s.attacks : [["No attacks", 1]], 0, (s.attacks||[]).reduce((a,b)=>a+b[1],0), "Attacks");
+    
+    const b = s.bands;
+    $("bands").innerHTML = b.map((v, i) => {
+      const lo = i*20, hi = lo+20, mx = Math.max(1, ...b);
+      return `<div><b>${v}</b><div class="tr"><i style="height:${Math.max(8, v/mx*100)}%;background:var(--${lo>=60?'red':lo>=40?'amber':'green'})"></i></div><span>${lo}-${hi}</span></div>`;
+    }).join("");
+    $("recent").innerHTML = (s.recent||[]).map(r => `<div class="rec" onclick="openModal(${r.id})"><span>${esc(r.name)}</span><span class="${esc(r.verdict)}">${esc(r.verdict)}</span></div>`).join("") || "<p class='muted'>No scans yet.</p>";
+    $("layers").innerHTML = (s.layers||[]).map(([k, v]) => `<div class="lay"><span>${esc(k)} <b>${v}%</b></span><div class="tr"><i style="width:${v}%"></i></div></div>`).join("") || "<p class='muted'>No flagged scans yet.</p>";
+    
+    if (s.detected_threats && s.detected_threats.length) {
+      $("detectedThreats").innerHTML = s.detected_threats.map(t => `
+        <div class="rec" style="cursor:default">
+          <span>${esc(t.name)}</span>
+          <span class="bad" style="font-weight:bold">${esc(t.family)}</span>
+        </div>
+      `).join("");
+    } else {
+      $("detectedThreats").innerHTML = "<p class='muted'>No specific families detected yet.</p>";
+    }
+
+    await loadHistory();
+    await loadAudit();
+  }catch(e){ setStatus("dashboard","Could not load stats: " + e.message); }
+}
+
+async function loadHistory(){
+  try{
+    const list = await (await fetch("/api/history")).json();
+    HIST = list;
+    const filtered = Q ? list.filter(r => (r.name + " " + (r.sha256||"")).toLowerCase().includes(Q.toLowerCase())) : list;
+    
+    $("hist").innerHTML = filtered.map(r => `
+      <tr class="click" onclick="openModal(${r.id})">
+        <td>${r.id}</td>
+        <td>${esc(r.ts).replace("T"," ")}</td>
+        <td>${esc(r.name)}</td>
+        <td>${esc(r.kind)}</td>
+        <td class="${esc(r.verdict)}">${esc(r.verdict)}</td>
+        <td>${r.score}</td>
+        <td>
+          <button class="icon-btn" onclick="event.stopPropagation();openModal(${r.id})" title="View Details">
+            <svg class="ic" viewBox="0 0 24 24" style="width:18px;height:18px">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+        </td>
+      </tr>
+    `).join("");
+    $("histEmpty").classList.toggle("hide", filtered.length > 0);
+  }catch(e){}
+}
+async function loadAudit(){
+  try{
+    const list = await (await fetch("/api/audit")).json();
+    $("auditRows").innerHTML = list.map(r => `<tr><td>${esc(r.ts).replace("T"," ")}</td><td>${esc(r.action)}</td><td>${esc(r.detail)}</td><td>${esc(r.actor)}</td></tr>`).join("");
+    $("auditEmpty").classList.toggle("hide", list.length > 0);
+  }catch(e){}
+}
+function adminToken(){
+  return "";
+}
+function confirmBox(title, msg, okLabel){
+  return new Promise(resolve => {
+    const m = $("confirmModal");
+    $("confirmTitle").textContent = title;
+    $("confirmMsg").textContent = msg;
+    $("confirmOk").textContent = okLabel || "Delete";
+    m.classList.remove("hide");
+    $("confirmCancel").focus();
+    const done = v => {
+      m.classList.add("hide");
+      $("confirmOk").onclick = $("confirmCancel").onclick = $("confirmX").onclick = m.onclick = null;
+      document.removeEventListener("keydown", onKey, true);
+      resolve(v);
+    };
+    const onKey = ev => { if(ev.key === "Escape"){ ev.stopPropagation(); done(false); } };
+    document.addEventListener("keydown", onKey, true);
+    $("confirmOk").onclick = () => done(true);
+    $("confirmCancel").onclick = () => done(false);
+    $("confirmX").onclick = () => done(false);
+    m.onclick = ev => { if(ev.target === m) done(false); };
+  });
+}
+async function delScan(id){
+  if(!await confirmBox("Delete this scan?", "This scan and its report will be permanently deleted. This cannot be undone.", "Delete")) return;
+  try{
+    const r = await fetch("/api/scan/" + id, {method:"DELETE", headers:{"X-Admin-Token": adminToken()}});
+    if(r.status === 401){ sessionStorage.removeItem("admin_token"); alert("Wrong admin token."); return; }
+    if(!r.ok){ alert("Could not delete scan (" + r.status + ")."); return; }
+    $("detailModal").classList.add("hide");
+    document.querySelectorAll('[id^="res-"]').forEach(b => { if(b.querySelector('[data-del="' + id + '"]')) b.innerHTML = ""; });
+    refresh();
+  }catch(e){ alert("Delete failed: " + e.message); }
+}
+document.addEventListener("click", async e => {
+  if(e.target.matches("[data-clear]")){
+    if(!await confirmBox("Delete ALL saved scans?", "Every saved scan will be permanently deleted and the dashboard will be reset. This cannot be undone.", "Delete all")) return;
+    try{
+      const r = await fetch("/api/clear", {method:"POST", headers:{"X-Admin-Token": adminToken()}});
+      if(r.status === 401){ sessionStorage.removeItem("admin_token"); alert("Wrong admin token."); return; }
+      refresh();
+    }catch(err){}
+  }
+  if(e.target.matches("[data-del]")){
+    await delScan(Number(e.target.dataset.del));
+  }
+});
+$("search").addEventListener("input", e => { Q = e.target.value; loadHistory(); });
+
+route();
+</script>
+</body>
+</html>

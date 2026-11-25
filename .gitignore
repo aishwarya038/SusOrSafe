@@ -1,0 +1,6 @@
+.env
+susorsafe.db
+venv/
+.venv/
+__pycache__/
+*.py[cod]
