@@ -18,7 +18,7 @@ ABUSE = os.getenv("ABUSEIPDB_API_KEY")
 ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY")
 AI_MODEL = os.getenv("AI_MODEL") or "claude-sonnet-5-5"
 HERE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.getenv("SUSORSAFE_DB") or os.path.join(HERE, "susorsafe.db")
+DB_PATH = os.getenv("SUSORSAFE_DB") or "/var/data/susorsafe.db"
 app = Flask(__name__, static_folder="static", static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
